@@ -1,0 +1,56 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="orb" cx="50%" cy="42%" r="58%">
+      <stop offset="0%" stop-color="#E9D5FF"/>
+      <stop offset="38%" stop-color="#A78BFA"/>
+      <stop offset="72%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#2E1065" stop-opacity="0.92"/>
+    </radialGradient>
+    <linearGradient id="beam-center" x1="256" y1="56" x2="256" y2="312" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#67E8F9" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="#8B5CF6" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="beam-left" x1="112" y1="64" x2="232" y2="292" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#C4B5FD" stop-opacity="0.82"/>
+      <stop offset="100%" stop-color="#7C3AED" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="beam-right" x1="400" y1="64" x2="280" y2="292" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#C4B5FD" stop-opacity="0.82"/>
+      <stop offset="100%" stop-color="#7C3AED" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="spark" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <circle cx="256" cy="300" r="158" stroke="#7C3AED" stroke-opacity="0.16" stroke-width="8"/>
+  <circle cx="256" cy="300" r="116" stroke="#A78BFA" stroke-opacity="0.24" stroke-width="6"/>
+
+  <path d="M256 308L238 62H274L256 308Z" fill="url(#beam-center)"/>
+  <path d="M240 302L98 70L176 96L240 302Z" fill="url(#beam-left)"/>
+  <path d="M272 302L414 70L336 96L272 302Z" fill="url(#beam-right)"/>
+
+  <ellipse cx="256" cy="410" rx="74" ry="18" fill="#1F114A" fill-opacity="0.9"/>
+  <rect x="244" y="320" width="24" height="98" rx="12" fill="#4C1D95"/>
+  <rect x="190" y="392" width="132" height="28" rx="14" fill="#34156F"/>
+
+  <circle cx="256" cy="300" r="74" fill="#7C3AED" fill-opacity="0.28" filter="url(#glow)"/>
+  <circle cx="256" cy="300" r="58" fill="url(#orb)" filter="url(#glow)"/>
+  <ellipse cx="238" cy="280" rx="20" ry="14" fill="white" fill-opacity="0.18"/>
+  <circle cx="256" cy="300" r="15" fill="#67E8F9" filter="url(#spark)"/>
+  <circle cx="256" cy="300" r="7" fill="white"/>
+
+  <ellipse cx="256" cy="300" rx="92" ry="24" stroke="#C4B5FD" stroke-opacity="0.42" stroke-width="5" stroke-dasharray="18 12"/>
+</svg>

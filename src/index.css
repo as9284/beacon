@@ -1,0 +1,556 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Cosmic dark-purple palette ─────────────────────────── */
+  --color-space-950: #06060e;
+  --color-space-900: #0a0a14;
+  --color-space-800: #0f0e1c;
+  --color-space-700: #151326;
+  --color-space-600: #1c192f;
+
+  --color-surface-900: #111029;
+  --color-surface-800: #18163a;
+  --color-surface-700: #201d4a;
+  --color-surface-600: #2a2660;
+
+  --color-border-dim: #2a2655;
+  --color-border-mid: #3d3880;
+  --color-border-bright: #5a52a8;
+
+  --color-purple-950: #2e1065;
+  --color-purple-900: #4c1d95;
+  --color-purple-800: #5b21b6;
+  --color-purple-700: #6d28d9;
+  --color-purple-600: #7c3aed;
+  --color-purple-500: #8b5cf6;
+  --color-purple-400: #a78bfa;
+  --color-purple-300: #c4b5fd;
+  --color-purple-200: #ddd6fe;
+  --color-purple-100: #ede9fe;
+
+  --color-cyan-500: #06b6d4;
+  --color-cyan-400: #22d3ee;
+  --color-cyan-300: #67e8f9;
+
+  --color-nebula-pink: #ec4899;
+  --color-nebula-blue: #3b82f6;
+
+  --color-text-primary: #e8e5f8;
+  --color-text-secondary: #a49dc4;
+  --color-text-muted: #6b6585;
+  --color-text-dim: #3f3a60;
+
+  /* ── Typography ─────────────────────────────────────────── */
+  --font-sans: "Inter", "SF Pro Display", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+
+  /* ── Radius ─────────────────────────────────────────────── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+
+  /* ── Shadows / glows ────────────────────────────────────── */
+  --shadow-glow-purple: 0 0 24px 4px rgba(139, 92, 246, 0.3);
+  --shadow-glow-cyan: 0 0 20px 3px rgba(34, 211, 238, 0.25);
+  --shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Base reset ─────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-dim);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-mid);
+}
+
+/* Selection */
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+  color: var(--color-text-primary);
+}
+
+/* ── App shell ──────────────────────────────────────────────────────────── */
+.app-shell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-space-900);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-dim);
+  position: relative;
+}
+
+/* ── Cosmic noise overlay ───────────────────────────────────────────────── */
+.app-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* ── Gradient background ────────────────────────────────────────────────── */
+.bg-cosmic {
+  background:
+    radial-gradient(
+      ellipse at 20% 0%,
+      rgba(109, 40, 217, 0.18) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 80% 100%,
+      rgba(34, 211, 238, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 50% 50%,
+      rgba(90, 60, 180, 0.06) 0%,
+      transparent 70%
+    ),
+    var(--color-space-900);
+}
+
+/* ── Top bar ────────────────────────────────────────────────────────────── */
+.topbar {
+  position: relative;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  height: 42px;
+  padding: 0 12px;
+  background: rgba(10, 10, 20, 0.8);
+  border-bottom: 1px solid var(--color-border-dim);
+  backdrop-filter: blur(12px);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.topbar-nodrag {
+  -webkit-app-region: no-drag;
+}
+
+/* ── Glass card ─────────────────────────────────────────────────────────── */
+.glass {
+  background: rgba(18, 16, 40, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--color-border-dim);
+}
+
+/* ── Glow text ──────────────────────────────────────────────────────────── */
+.text-glow-purple {
+  text-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+}
+.text-glow-cyan {
+  text-shadow: 0 0 16px rgba(34, 211, 238, 0.5);
+}
+
+/* ── Chat input ─────────────────────────────────────────────────────────── */
+.chat-input {
+  background: rgba(18, 16, 40, 0.8);
+  border: 1px solid var(--color-border-dim);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  width: 100%;
+  padding: 12px 18px;
+}
+
+.chat-input:focus {
+  border-color: var(--color-purple-600);
+  box-shadow:
+    0 0 0 2px rgba(124, 58, 237, 0.2),
+    var(--shadow-glow-purple);
+}
+
+.chat-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* ── Send button ────────────────────────────────────────────────────────── */
+.btn-send {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-purple-600);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.2s,
+    transform 0.1s,
+    box-shadow 0.2s;
+  color: white;
+}
+
+.btn-send:hover:not(:disabled) {
+  background: var(--color-purple-500);
+  box-shadow: var(--shadow-glow-purple);
+  transform: scale(1.05);
+}
+
+.btn-send:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.btn-send:disabled {
+  background: var(--color-surface-700);
+  cursor: not-allowed;
+  color: var(--color-text-dim);
+}
+
+/* ── Recent project card remove button ──────────────────────────────────── */
+.card-project-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0);
+  color: var(--color-text-dim);
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+  z-index: 2;
+}
+
+.card-project:hover .card-project-remove,
+.card-project:focus-within .card-project-remove {
+  opacity: 1;
+}
+
+.card-project-remove:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+/* ── Row send button (beside the textarea) ──────────────────────────────── */
+.btn-send-row {
+  flex-shrink: 0;
+  align-self: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: var(--color-purple-700);
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.18s,
+    transform 0.1s,
+    box-shadow 0.18s;
+  color: white;
+}
+
+.btn-send-row:hover:not(:disabled) {
+  background: var(--color-purple-600);
+  box-shadow: var(--shadow-glow-purple);
+  transform: scale(1.04);
+}
+
+.btn-send-row:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.btn-send-row:disabled {
+  background: var(--color-surface-700);
+  border-color: transparent;
+  cursor: not-allowed;
+  color: var(--color-text-dim);
+}
+.win-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
+  opacity: 0.6;
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.win-btn:hover {
+  opacity: 1;
+}
+
+.win-btn-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+.win-btn-minimize:hover {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+}
+.win-btn-maximize:hover {
+  background: rgba(139, 92, 246, 0.2);
+  color: var(--color-purple-400);
+}
+
+/* ── Message bubbles ────────────────────────────────────────────────────── */
+.msg-user {
+  background: rgba(109, 40, 217, 0.2);
+  border: 1px solid rgba(109, 40, 217, 0.3);
+  border-radius: var(--radius-lg) var(--radius-lg) 4px var(--radius-lg);
+}
+
+.msg-assistant {
+  background: rgba(18, 16, 40, 0.7);
+  border: 1px solid var(--color-border-dim);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) 4px;
+}
+
+/* ── Typing indicator ───────────────────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.typing-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-purple-400);
+  animation: pulse-dot 1.4s infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* ── Prose markdown ─────────────────────────────────────────────────────── */
+.prose-beacon {
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+
+.prose-beacon p {
+  margin: 0.5em 0;
+}
+
+.prose-beacon h1,
+.prose-beacon h2,
+.prose-beacon h3 {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  margin: 1em 0 0.5em;
+}
+
+.prose-beacon code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: rgba(109, 40, 217, 0.15);
+  border: 1px solid rgba(109, 40, 217, 0.25);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--color-purple-300);
+}
+
+.prose-beacon pre {
+  background: rgba(6, 6, 14, 0.8);
+  border: 1px solid var(--color-border-dim);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 0.75em 0;
+}
+
+.prose-beacon pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+}
+
+.prose-beacon ul,
+.prose-beacon ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.prose-beacon li {
+  margin: 0.2em 0;
+}
+
+.prose-beacon a {
+  color: var(--color-cyan-400);
+  text-decoration: none;
+}
+
+.prose-beacon a:hover {
+  text-decoration: underline;
+}
+
+.prose-beacon blockquote {
+  border-left: 3px solid var(--color-purple-600);
+  padding-left: 1em;
+  color: var(--color-text-secondary);
+  margin: 0.5em 0;
+  font-style: italic;
+}
+
+.prose-beacon hr {
+  border: none;
+  border-top: 1px solid var(--color-border-dim);
+  margin: 1em 0;
+}
+
+/* ── Fade-in animation ──────────────────────────────────────────────────── */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.3s ease forwards;
+}
+
+/* ── Settings input ─────────────────────────────────────────────────────── */
+.settings-input {
+  background: rgba(18, 16, 40, 0.7);
+  border: 1px solid var(--color-border-dim);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  padding: 10px 14px;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  width: 100%;
+}
+
+.settings-input:focus {
+  border-color: var(--color-purple-600);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15);
+}
+
+.settings-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* ── Recent project cards ────────────────────────────────────────────────── */
+.card-project {
+  background: rgba(18, 16, 40, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--color-border-dim);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  cursor: pointer;
+  position: relative;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.14s ease,
+    box-shadow 0.18s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  width: 100%;
+}
+
+.card-project:hover {
+  border-color: rgba(124, 58, 237, 0.45);
+  background: rgba(124, 58, 237, 0.07);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 24px rgba(109, 40, 217, 0.14);
+}
+
+.card-project:active {
+  transform: translateY(0px);
+  box-shadow: none;
+}
+
+.card-project:disabled {
+  opacity: 0.65;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
