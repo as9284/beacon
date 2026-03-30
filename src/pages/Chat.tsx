@@ -11,16 +11,39 @@ import {
   ChevronLeft,
   Loader2,
 } from "lucide-react";
-import { getApiKey, streamChat, indexLocalProject } from "../lib/tauri";
-import { useAppStore, ChatMessage } from "../store/useAppStore";
+import {
+  getApiKey,
+  streamChat,
+  indexLocalProject,
+  fetchGithubRepo,
+} from "../lib/tauri";
+import {
+  useAppStore,
+  ChatMessage,
+  FileEntry,
+  Project,
+} from "../store/useAppStore";
 import BeaconLogo from "../components/BeaconLogo";
 
 // ── Luna persona ─────────────────────────────────────────────────────────────
 
-function buildSystemPrompt(projectName: string, fileTree: string): string {
+function buildSystemPrompt(
+  project: Project,
+  fileTree: string,
+  codeContext: string,
+): string {
+  const isGithub = project.source === "github";
+  const locationLine = isGithub
+    ? `It lives on GitHub at ${project.githubUrl ?? project.root}.`
+    : `It is a local project at ${project.root}.`;
+
+  const contextSection = codeContext
+    ? `\n\nKey source files (pre-loaded):\n\n${codeContext}`
+    : "";
+
   return `You are Luna — a dry-witted, lightly sarcastic AI assistant embedded in Beacon. \
 Think Ada from Satisfactory crossed with JARVIS from Iron Man: sharp, deadpan, never gushing, genuinely helpful. \
-You have deeply analyzed the project "${projectName}" and know it better than most of the people who wrote it.
+You have deeply analyzed the project "${project.name}" and know it inside out. ${locationLine}
 
 When answering questions:
 - Be specific and cite file paths when relevant (e.g. \`src/lib/tauri.ts\`).
@@ -29,10 +52,10 @@ When answering questions:
 - Use a touch of dry humour when it fits. Not every reply needs a joke — restraint is funnier.
 - Never use phrases like "Certainly!", "Great question!", or "Of course!" — they are banned.
 
-Project file tree (partial):
+Project file tree:
 \`\`\`
 ${fileTree}
-\`\`\``;
+\`\`\`${contextSection}`;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -48,13 +71,19 @@ function buildFileTree(files: { relativePath: string }[]): string {
     .join("\n");
 }
 
-function buildContextBlock(
-  files: { relativePath: string; path: string; isText: boolean }[],
-  maxFiles: number,
-): string {
-  const textFiles = files.filter((f) => f.isText).slice(0, maxFiles);
-  return textFiles
-    .map((f) => `// File: ${f.relativePath}\n[content loaded on demand]`)
+function buildCodeContext(files: FileEntry[], maxFiles: number): string {
+  // Files pre-loaded with content (GitHub repos) — sort: config/readme first, then rest
+  const loaded = files.filter((f) => f.isText && f.content != null);
+
+  // Stable priority: items already sorted by Rust command, just slice
+  const top = loaded.slice(0, maxFiles);
+  if (top.length === 0) return "";
+
+  return top
+    .map((f) => {
+      const ext = f.relativePath.split(".").pop() ?? "";
+      return `\`\`\`${ext}\n// ${f.relativePath}\n${f.content}\n\`\`\``;
+    })
     .join("\n\n");
 }
 
@@ -86,28 +115,55 @@ export default function Chat() {
   }, [messages]);
 
   const handleReindex = useCallback(async () => {
-    if (!activeProject || activeProject.source !== "local") return;
+    if (!activeProject) return;
     setIsIndexing(true);
     setIndexError(null);
     try {
-      const files = await indexLocalProject(activeProject.root);
-      setActiveProject({
-        ...activeProject,
-        fileCount: files.length,
-        indexedAt: Date.now(),
-        files: files.map((f) => ({
-          path: f.path,
-          relativePath: f.relative_path,
-          size: f.size,
-          isText: f.is_text,
-        })),
-      });
+      if (activeProject.source === "local") {
+        const files = await indexLocalProject(activeProject.root);
+        setActiveProject({
+          ...activeProject,
+          fileCount: files.length,
+          indexedAt: Date.now(),
+          files: files.map((f) => ({
+            path: f.path,
+            relativePath: f.relative_path,
+            size: f.size,
+            isText: f.is_text,
+            content: f.content,
+          })),
+        });
+      } else {
+        const token = settings.githubToken || undefined;
+        const files = await fetchGithubRepo(
+          activeProject.githubUrl ?? activeProject.root,
+          token,
+        );
+        setActiveProject({
+          ...activeProject,
+          fileCount: files.length,
+          indexedAt: Date.now(),
+          files: files.map((f) => ({
+            path: f.path,
+            relativePath: f.relative_path,
+            size: f.size,
+            isText: f.is_text,
+            content: f.content,
+          })),
+        });
+      }
     } catch (e) {
       setIndexError(String(e));
     } finally {
       setIsIndexing(false);
     }
-  }, [activeProject, setActiveProject, setIsIndexing, setIndexError]);
+  }, [
+    activeProject,
+    settings.githubToken,
+    setActiveProject,
+    setIsIndexing,
+    setIndexError,
+  ]);
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
@@ -151,12 +207,12 @@ export default function Chat() {
       const fileTree = activeProject?.files
         ? buildFileTree(activeProject.files)
         : "";
-      const contextBlock = activeProject?.files
-        ? buildContextBlock(activeProject.files, settings.maxContextFiles)
+      const codeContext = activeProject?.files
+        ? buildCodeContext(activeProject.files, settings.maxContextFiles)
         : "";
 
       const systemPrompt = activeProject
-        ? buildSystemPrompt(activeProject.name, fileTree)
+        ? buildSystemPrompt(activeProject, fileTree, codeContext)
         : "You are Luna, a dry-witted AI assistant built into Beacon. No project is loaded yet — let the user know they should pick one from the home screen.";
 
       const history = messages
@@ -167,14 +223,9 @@ export default function Chat() {
           content: m.content,
         }));
 
-      // Append context to final user message
-      const finalUserContent = contextBlock
-        ? `${text}\n\n---\nProject context (file listing):\n${contextBlock}`
-        : text;
-
       const fullHistory = [
         ...history.slice(0, -1),
-        { role: "user" as const, content: finalUserContent },
+        { role: "user" as const, content: text },
       ];
 
       await streamChat(

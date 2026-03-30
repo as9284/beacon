@@ -3,7 +3,7 @@ mod commands;
 use commands::{
     chat::{list_gemini_models, stream_chat},
     keychain::{delete_api_key, get_api_key, save_api_key},
-    project::{index_local_project, pick_project_folder, read_file_content},
+    project::{fetch_github_repo, index_local_project, pick_project_folder, read_file_content},
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -23,6 +23,7 @@ pub fn run() {
             pick_project_folder,
             index_local_project,
             read_file_content,
+            fetch_github_repo,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Beacon");

@@ -25,6 +25,8 @@ export interface FileEntry {
   relativePath: string;
   size: number;
   isText: boolean;
+  /** Pre-loaded text content — populated for GitHub repos. */
+  content?: string;
 }
 
 export type GeminiModelId = string;
@@ -63,8 +65,9 @@ interface AppState {
   removeRecentProject: (root: string) => void;
   clearAllRecents: () => void;
 
-  // Chat history
+  // Chat history (current session + saved per-project history)
   messages: ChatMessage[];
+  savedMessages: Record<string, ChatMessage[]>;
   addMessage: (m: ChatMessage) => void;
   updateLastAssistantMessage: (text: string) => void;
   clearMessages: () => void;
@@ -114,13 +117,25 @@ export const useAppStore = create<AppState>()(
       activeProject: null,
       setActiveProject: (p) =>
         set((s) => {
-          if (!p) return { activeProject: null, messages: [] };
+          // Save the current chat before switching projects
+          const savedMessages = { ...s.savedMessages };
+          if (s.activeProject && s.messages.length > 0) {
+            savedMessages[s.activeProject.root] = s.messages.slice(-50);
+          }
+          if (!p) return { activeProject: null, messages: [], savedMessages };
           const stripped: Project = { ...p, files: undefined };
           const recent: Project[] = [
             stripped,
             ...s.recentProjects.filter((r) => r.root !== p.root),
           ].slice(0, 6);
-          return { activeProject: p, messages: [], recentProjects: recent };
+          // Restore saved chat for this project, if any
+          const messages = savedMessages[p.root] ?? [];
+          return {
+            activeProject: p,
+            messages,
+            recentProjects: recent,
+            savedMessages,
+          };
         }),
 
       recentProjects: [],
@@ -131,6 +146,7 @@ export const useAppStore = create<AppState>()(
       clearAllRecents: () => set({ recentProjects: [] }),
 
       messages: [],
+      savedMessages: {},
       addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
       updateLastAssistantMessage: (text) =>
         set((s) => {
@@ -143,7 +159,13 @@ export const useAppStore = create<AppState>()(
           }
           return { messages: msgs };
         }),
-      clearMessages: () => set({ messages: [] }),
+      clearMessages: () =>
+        set((s) => {
+          // Also wipe the saved history for the active project so it doesn't come back
+          const savedMessages = { ...s.savedMessages };
+          if (s.activeProject) delete savedMessages[s.activeProject.root];
+          return { messages: [], savedMessages };
+        }),
 
       isIndexing: false,
       setIsIndexing: (v) => set({ isIndexing: v }),
@@ -154,7 +176,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "beacon-app-state",
-      version: 2,
+      version: 3,
       migrate: (persistedState, _version) => {
         const state = (persistedState ?? {}) as {
           settings?: Partial<AppSettings>;
@@ -179,6 +201,7 @@ export const useAppStore = create<AppState>()(
             ? { ...state.activeProject, files: undefined }
             : null,
           recentProjects: [],
+          savedMessages: {},
         };
       },
       partialize: (s) => ({
@@ -190,6 +213,7 @@ export const useAppStore = create<AppState>()(
           ...p,
           files: undefined,
         })),
+        savedMessages: s.savedMessages,
       }),
     },
   ),

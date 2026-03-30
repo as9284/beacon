@@ -64,7 +64,7 @@ export default function App() {
         className="absolute bottom-2 right-3 text-xs pointer-events-none"
         style={{ color: "var(--color-text-dim)", zIndex: 10 }}
       >
-        v0.1.0
+        v1.0.0
       </div>
     </div>
   );

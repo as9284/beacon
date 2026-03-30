@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Loader2,
   ChevronLeft,
+  GitBranch,
 } from "lucide-react";
 import {
   saveApiKey,
@@ -48,6 +49,8 @@ export default function Settings() {
   const [activeSection, setActiveSection] = useState<
     "api" | "model" | "project"
   >("api");
+  const [githubTokenDraft, setGithubTokenDraft] = useState("");
+  const [showGithubToken, setShowGithubToken] = useState(false);
 
   async function loadModels() {
     setIsLoadingModels(true);
@@ -606,6 +609,125 @@ export default function Settings() {
                   >
                     Streaming responses
                   </span>
+                </div>
+
+                {/* ── GitHub personal access token ── */}
+                <div
+                  className="pt-3 mt-1"
+                  style={{ borderTop: "1px solid var(--color-border-dim)" }}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <GitBranch
+                      size={14}
+                      style={{ color: "var(--color-text-secondary)" }}
+                    />
+                    <h3
+                      className="text-sm font-semibold"
+                      style={{ color: "var(--color-text-primary)" }}
+                    >
+                      GitHub Access Token
+                    </h3>
+                  </div>
+                  <p
+                    className="text-xs mb-3"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
+                    Required for private repos. Also raises the rate limit for
+                    public repos. Generate one at{" "}
+                    <a
+                      href="https://github.com/settings/tokens"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "var(--color-cyan-400)" }}
+                    >
+                      github.com/settings/tokens
+                    </a>{" "}
+                    — read-only repo scope is enough.
+                  </p>
+
+                  {settings.githubToken && (
+                    <div
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm mb-3"
+                      style={{
+                        background: "rgba(34,197,94,0.10)",
+                        border: "1px solid rgba(34,197,94,0.25)",
+                        color: "#86efac",
+                      }}
+                    >
+                      <Check size={14} />
+                      Token configured.
+                      <button
+                        className="ml-auto flex items-center gap-1 text-xs opacity-60 hover:opacity-100 transition-opacity"
+                        style={{ color: "#f87171" }}
+                        onClick={() =>
+                          updateSettings({ githubToken: undefined })
+                        }
+                      >
+                        <Trash2 size={12} />
+                        Remove
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <input
+                        className="settings-input pr-10"
+                        type={showGithubToken ? "text" : "password"}
+                        placeholder={
+                          settings.githubToken
+                            ? "Replace existing token…"
+                            : "ghp_…"
+                        }
+                        value={githubTokenDraft}
+                        onChange={(e) => setGithubTokenDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && githubTokenDraft.trim()) {
+                            updateSettings({
+                              githubToken: githubTokenDraft.trim(),
+                            });
+                            setGithubTokenDraft("");
+                          }
+                        }}
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                      <button
+                        className="absolute right-3 top-1/2 -translate-y-1/2 opacity-40 hover:opacity-80"
+                        style={{ color: "var(--color-text-secondary)" }}
+                        onClick={() => setShowGithubToken((v) => !v)}
+                        tabIndex={-1}
+                        type="button"
+                      >
+                        {showGithubToken ? (
+                          <EyeOff size={15} />
+                        ) : (
+                          <Eye size={15} />
+                        )}
+                      </button>
+                    </div>
+                    <button
+                      disabled={!githubTokenDraft.trim()}
+                      onClick={() => {
+                        updateSettings({
+                          githubToken: githubTokenDraft.trim(),
+                        });
+                        setGithubTokenDraft("");
+                      }}
+                      className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150"
+                      style={{
+                        background: "rgba(124,58,237,0.25)",
+                        border: "1px solid rgba(124,58,237,0.4)",
+                        color: "var(--color-purple-300)",
+                        opacity: !githubTokenDraft.trim() ? 0.5 : 1,
+                        cursor: !githubTokenDraft.trim()
+                          ? "not-allowed"
+                          : "pointer",
+                      }}
+                    >
+                      Save token
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}

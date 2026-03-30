@@ -115,6 +115,19 @@ body {
   position: relative;
 }
 
+/* Bottom border rendered inside the box so overflow:hidden can't clip it */
+.app-shell::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--color-border-dim);
+  pointer-events: none;
+  z-index: 9999;
+}
+
 /* ── Cosmic noise overlay ───────────────────────────────────────────────── */
 .app-shell::before {
   content: "";

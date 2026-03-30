@@ -9,7 +9,11 @@ import {
   Clock,
   X,
 } from "lucide-react";
-import { pickProjectFolder, indexLocalProject } from "../lib/tauri";
+import {
+  pickProjectFolder,
+  indexLocalProject,
+  fetchGithubRepo,
+} from "../lib/tauri";
 import { useAppStore, Project } from "../store/useAppStore";
 import BeaconLogo from "../components/BeaconLogo";
 
@@ -158,6 +162,7 @@ export default function Home() {
     recentProjects,
     removeRecentProject,
     clearAllRecents,
+    settings,
   } = useAppStore();
 
   const [githubUrl, setGithubUrl] = useState("");
@@ -193,6 +198,7 @@ export default function Home() {
           relativePath: f.relative_path,
           size: f.size,
           isText: f.is_text,
+          content: f.content,
         })),
       });
       setView("chat");
@@ -213,17 +219,33 @@ export default function Home() {
       return;
     }
     setIndexError(null);
-    const match = githubUrl.match(/github\.com\/[^/]+\/([^/]+)/);
-    const name = match?.[1]?.replace(/\.git$/, "") ?? "Repo";
-    setActiveProject({
-      name,
-      root: githubUrl,
-      source: "github",
-      githubUrl,
-      fileCount: 0,
-      indexedAt: Date.now(),
-    });
-    setView("chat");
+    setIsIndexing(true);
+    try {
+      const match = githubUrl.match(/github\.com\/[^/]+\/([^/]+)/);
+      const name = match?.[1]?.replace(/\.git$/, "") ?? "Repo";
+      const token = settings.githubToken || undefined;
+      const files = await fetchGithubRepo(githubUrl.trim(), token);
+      setActiveProject({
+        name,
+        root: githubUrl.trim(),
+        source: "github",
+        githubUrl: githubUrl.trim(),
+        fileCount: files.length,
+        indexedAt: Date.now(),
+        files: files.map((f) => ({
+          path: f.path,
+          relativePath: f.relative_path,
+          size: f.size,
+          isText: f.is_text,
+          content: f.content,
+        })),
+      });
+      setView("chat");
+    } catch (e) {
+      setIndexError(String(e));
+    } finally {
+      setIsIndexing(false);
+    }
   };
 
   const handleOpenRecent = async (project: Project) => {
@@ -247,6 +269,7 @@ export default function Home() {
             relativePath: f.relative_path,
             size: f.size,
             isText: f.is_text,
+            content: f.content,
           })),
         });
         setView("chat");
@@ -257,8 +280,34 @@ export default function Home() {
         setLoadingRoot(null);
       }
     } else {
-      setActiveProject({ ...project });
-      setView("chat");
+      // GitHub project — re-fetch the tree and content
+      setLoadingRoot(project.root);
+      setIsIndexing(true);
+      try {
+        const token = settings.githubToken || undefined;
+        const files = await fetchGithubRepo(
+          project.githubUrl ?? project.root,
+          token,
+        );
+        setActiveProject({
+          ...project,
+          fileCount: files.length,
+          indexedAt: Date.now(),
+          files: files.map((f) => ({
+            path: f.path,
+            relativePath: f.relative_path,
+            size: f.size,
+            isText: f.is_text,
+            content: f.content,
+          })),
+        });
+        setView("chat");
+      } catch (e) {
+        setIndexError(String(e));
+      } finally {
+        setIsIndexing(false);
+        setLoadingRoot(null);
+      }
     }
   };
 

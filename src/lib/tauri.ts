@@ -38,6 +38,7 @@ export interface RustFileEntry {
   relative_path: string;
   size: number;
   is_text: boolean;
+  content?: string;
 }
 
 export const pickProjectFolder = () =>
@@ -45,6 +46,12 @@ export const pickProjectFolder = () =>
 
 export const indexLocalProject = (root: string) =>
   invoke<RustFileEntry[]>("index_local_project", { root });
+
+export const fetchGithubRepo = (githubUrl: string, token?: string) =>
+  invoke<RustFileEntry[]>("fetch_github_repo", {
+    githubUrl,
+    token: token ?? null,
+  });
 
 export const readFileContent = (path: string) =>
   invoke<string>("read_file_content", { path });
